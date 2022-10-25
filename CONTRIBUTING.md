@@ -643,6 +643,44 @@ With:
 
     <br>
 
+    <table>
+    <tr>
+    <td> Good code :white_check_mark: </td> <td> Bad code :x: </td>
+    </tr>
+    <tr>
+    <td>
+
+    ```python
+    """disply_yeildcurve takes in a country name and returns a dataframe"""
+
+    def display_yieldcurve(country: str):
+
+          df = fred_model.get_yieldcurve(country)
+
+    
+    ```
+
+    </td>
+    <td>
+
+    ```python
+    """some irrelevant notes"""
+
+    def display_bondscrv(country: str):
+
+          df = fred_model.get_yieldcurve(country)
+
+          …
+
+
+    </td>
+    </tr>
+    </table>
+
+    <br>
+
+   
+
 4. Consistent and clear argument naming; not `symbol` in _view and then `ticker` in `_file` -> ticker everywhere; the name should be descriptive of what information it hold (see Style Guide section below)
 
     - Why? You can quickly understand what the input it should be; example: tickers and stock names are fundamentally different, but they’re both strings so they should be named accordingly.
