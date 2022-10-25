@@ -56,7 +56,7 @@ Use your best judgment, and feel free to propose changes to this document in a p
 
 ## Adding a new command
 
-Before implementing a new command we highly recommend that you go through [Understand Code Structure](#understand-code-structure) and [Follow Coding Guidelines](#follow-coding-guidelines). This will allow you to get your PR merged faster and keep consistency of our code base.
+Before (test) implementing a new command we highly recommend that you go through [Understand Code Structure](#understand-code-structure) and [Follow Coding Guidelines](#follow-coding-guidelines). This will allow you to get your PR merged faster and keep consistency of our code base.
 
 In the next sections we describe the process to add a new command. `shorted` command from category `dark_pool_shorts` and context `stocks` will be used as
 example. Since this command uses data from Yahoo Finance, a `yahoofinance_view.py` and a `yahoofinance_model.py` files
