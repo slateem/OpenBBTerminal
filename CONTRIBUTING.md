@@ -56,7 +56,7 @@ Use your best judgment, and feel free to propose changes to this document in a p
 
 ## Adding a new command
 
-Before (test) implementing a new command we highly recommend that you go through [Understand Code Structure](#understand-code-structure) and [Follow Coding Guidelines](#follow-coding-guidelines). This will allow you to get your PR merged faster and keep consistency of our code base.
+Before implementing a new command we highly recommend that you go through [Understand Code Structure](#understand-code-structure) and [Follow Coding Guidelines](#follow-coding-guidelines). This will allow you to get your PR merged faster and keep consistency of our code base.
 
 In the next sections we describe the process to add a new command. `shorted` command from category `dark_pool_shorts` and context `stocks` will be used as
 example. Since this command uses data from Yahoo Finance, a `yahoofinance_view.py` and a `yahoofinance_model.py` files
@@ -545,6 +545,21 @@ With:
 | `common/`   | `technical_analysis/` | `overlap_model.py`     | This file contains functions that rely on **overlap** data. In this case **overlap** is not a data source, but the type of technical analysis performed. These functions represent _commands_ that belong to **technical_analysis** _category_ from **MULTIPLE** _contexts_. These functions are called by `overlap_view.py`, and will return data to be processed in either a string, dictionary or dataframe format. Due to the fact that this file is **common** to multiple _contexts_ the functions need to be generic enough to accommodate for this. E.g. if we are getting the sentiment of an instrument, we should ensure that these functions accept both a "GME" or a "BTC", for `stocks` and `crypto`, respectively.                     |
 
 ## Follow Coding Guidelines
+
+- [General Code Requirements](#general-code-requirements)
+- [File Specific Requirements](#file-specific-requirements)
+- [Coding Style](#coding-style)
+    - [OpenBB Style Guide](#openbb-style-guide)
+    - [Flags](#flags)
+    - [Output format](#output-format)
+    - [Time-related](#time-related)
+    - [Data selection and manipulation](#data-selection-and-manipulation)
+    - [Financial instrument characteristics](#financial-instrument-characteristics)
+    - [Naming Convention](#naming-convention)
+    - [Docstrings](#docstrings)
+    - [Linters](#linters)
+    - [Command names](#command-names)
+
 
 ### General Code Requirements
 
