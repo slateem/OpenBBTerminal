@@ -33,6 +33,7 @@ Use your best judgment, and feel free to propose changes to this document in a p
       - [Docstrings](#docstrings)
       - [Linters](#linters)
       - [Command names](#command-names)
+      - [UI and UX](#ui-and-ux)
   - [External API Keys](#external-api-keys)
     - [Creating API key](#creating-api-key)
     - [Setting and checking API key](#setting-and-checking-api-key)
@@ -733,7 +734,7 @@ With:
     transactions = Portfolio.read_orderbook("../../portfolio/holdings/example.csv")
     P = Portfolio(transactions)
     P.generate_portfolio_data()
-    P.load_benchmark()
+    P.set_benchmark()
 
     # SDK endpoint access
     openbb.portfolio.gaintopain(P)
@@ -747,7 +748,7 @@ With:
     <td>
 
     ```python
-    def get_gaintopain_ratio(portfolio: PortfolioModel) -> pd.DataFrame:
+    def get_gaintopain_ratio(portfolio: PortfolioEngine) -> pd.DataFrame:
 
     """..."""
 
@@ -1168,6 +1169,17 @@ The following linters are used by our codebase:
 
 - The command name **should not** have the data source explicit
 
+#### UI and UX
+
+<img width="1676" alt="Screenshot 2022-10-26 at 12 17 19" src="https://user-images.githubusercontent.com/25267873/198012768-4cfecf7b-e961-4e55-a613-6648c0107b1e.png">
+
+It is important to keep a coherent UI/UX throughout the terminal. These are the rules we must abide:
+
+- There is 1 single empty line between user input and start of the command output.
+- There is 1 single empty line between command output and the user input.
+- The menu help has 1 empty line above text and 1 empty line below. Both still within the rectangular panel.
+- From menu help rectangular panel there's no empty line below - this makes it more clear to the user that they are inside such menu.
+
 ## External API Keys
 
 ### Creating API key
@@ -1426,8 +1438,8 @@ if session and obbff.USE_PROMPT_TOOLKIT:
      "-c": "--commodity",
      "--sortby": {c: None for c in self.wsj_sortby_cols_dict.keys()},
      "-s": "--sortby",
-     "--ascend": {},
-     "-a": "--ascend",
+     "--reverse": {},
+     "-r": "--reverse",
   }
   self.choices["map"] = {
      "--period": {c: None for c in self.map_period_list},
@@ -1444,7 +1456,7 @@ Important things to note:
 - `self.choices["overview"]`: this corresponds to the list of choices that the user is allowed to select after specifying `$ overview`
 - `"--commodity": {c: None for c in self.futures_commodities}`: this allows the user to select several commodity values after `--commodity` flag
 - `"-c": "--commodity"`: this is interpreted as `-c` having the same effect as `--commodity`
-- `"--ascend": {}`: corresponds to a boolean flag (does not expect any value after)
+- `"--reverse": {}`: corresponds to a boolean flag (does not expect any value after)
 - `"--start": None`: corresponds to a flag where the values allowed are not easily discrete due to vast range
 - `self.completer = NestedCompleter.from_nested_dict(self.choices)`: from the choices create our custom completer
 

@@ -38,8 +38,6 @@ from openbb_terminal.portfolio.brokers.degiro.degiro_model import DegiroModel
 
 logger = logging.getLogger(__name__)
 
-sys.tracebacklimit = 0
-
 # README PLEASE:
 # The API_DICT keys must match the set and check functions format.
 #
@@ -84,6 +82,9 @@ API_DICT: Dict = {
     "stocksera": "STOCKSERA",
 }
 
+# sorting api key section by name
+API_DICT = dict(sorted(API_DICT.items()))
+
 
 class KeyStatus(str, Enum):
     """Class to handle status messages and colors"""
@@ -121,20 +122,28 @@ def set_keys(
 
     Parameters
     ----------
-        keys_dict: Dict[str, Dict[str, Union[str, bool]]]
-            E.g. {"fred": {"key":"XXXXX"}, "binance": {"key":"YYYYY", "secret":"ZZZZZ"}}
-            More info on APIs can be found through get_keys_info().
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    keys_dict: Dict[str, Dict[str, Union[str, bool]]]
+        More info on the required inputs for each API can be found on `keys.get_keys_info()`
+    persist: bool
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool
+        Display status string or not. By default, False.
 
     Returns
     -------
-    status_dict: Dict
+    Dict
+        Status of each key set.
 
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> d = {
+            "fred": {"key": "XXXXX"},
+            "binance": {"key": "YYYYY", "secret": "ZZZZZ"},
+        }
+    >>> openbb.keys.set_keys(keys_dict=d)
     """
 
     status_dict = {}
@@ -170,8 +179,8 @@ def get_keys_info() -> Dict[str, List[str]]:
 
     Returns
     -------
-    Dictionary of expected API keys and arguments:  Dict[str, List[str]]
-
+    Dict[str, List[str]]
+        Dictionary of expected API keys and arguments
     """
     args_dict = {}
 
@@ -188,18 +197,34 @@ def get_keys_info() -> Dict[str, List[str]]:
     return args_dict
 
 
+def first_time_user() -> bool:
+    """Whether a user is a first time user. A first time user is someone with an empty .env file.
+    If this is true, it also adds an env variable to make sure this does not run again.
+
+    Returns
+    -------
+    bool
+        Whether or not the user is a first time user
+    """
+    if USER_ENV_FILE.stat().st_size == 0:
+        set_key("OPENBB_PREVIOUS_USE", "True", True)
+        return True
+    return False
+
+
 def set_key(env_var_name: str, env_var_value: str, persist: bool = False) -> None:
     """Set API key.
+
     Parameters
     ----------
-        env_var_name: str
-            API name
-        env_var_value: str
-            API key
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
+    env_var_name: str
+        API name
+    env_var_value: str
+        API key
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
     """
     if persist:
         os.environ[env_var_name] = env_var_value
@@ -215,13 +240,27 @@ def set_key(env_var_name: str, env_var_value: str, persist: bool = False) -> Non
 
 def get_keys(show: bool = False) -> pd.DataFrame:
     """Get currently set API keys.
+
     Parameters
     ----------
-        show: bool
-            Flag to choose whether to show actual keys or not.
-            By default, False.
-    Returns:
-        pd.DataFrame: currents keys
+    show: bool, optional
+        Flag to choose whether to show actual keys or not.
+        By default, False.
+
+    Returns
+    -------
+    pd.DataFrame
+        Currents keys
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.mykeys()
+                       Key
+              API
+     BITQUERY_KEY  *******
+          CMC_KEY  *******
+    COINGLASS_KEY  *******
     """
 
     # TODO: Refactor api variables without prefix API_ and extend API_SOURCE_KEY format
@@ -249,19 +288,27 @@ def get_keys(show: bool = False) -> pd.DataFrame:
 
 def set_av_key(key: str, persist: bool = False, show_output: bool = False) -> str:
     """Set Alpha Vantage key
+
     Parameters
     ----------
-        key: str
-            API key
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.av(key="example_key")
     """
 
     set_key("OPENBB_API_KEY_ALPHAVANTAGE", key, persist)
@@ -270,13 +317,16 @@ def set_av_key(key: str, persist: bool = False, show_output: bool = False) -> st
 
 def check_av_key(show_output: bool = False) -> str:
     """Check Alpha Vantage key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     if cfg.API_KEY_ALPHAVANTAGE == "REPLACE_ME":  # pragma: allowlist secret
@@ -301,19 +351,27 @@ def check_av_key(show_output: bool = False) -> str:
 
 def set_fmp_key(key: str, persist: bool = False, show_output: bool = False) -> str:
     """Set Financial Modeling Prep key
+
     Parameters
     ----------
-        key: str
-            API key
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.fmp(key="example_key")
     """
 
     set_key("OPENBB_API_KEY_FINANCIALMODELINGPREP", key, persist)
@@ -322,10 +380,12 @@ def set_fmp_key(key: str, persist: bool = False, show_output: bool = False) -> s
 
 def check_fmp_key(show_output: bool = False) -> str:
     """Check Financial Modeling Prep key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
     status: str
@@ -358,19 +418,27 @@ def check_fmp_key(show_output: bool = False) -> str:
 
 def set_quandl_key(key: str, persist: bool = False, show_output: bool = False) -> str:
     """Set Quandl key
+
     Parameters
     ----------
-        key: str
-            API key
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.quandl(key="example_key")
     """
 
     set_key("OPENBB_API_KEY_QUANDL", key, persist)
@@ -379,13 +447,16 @@ def set_quandl_key(key: str, persist: bool = False, show_output: bool = False) -
 
 def check_quandl_key(show_output: bool = False) -> str:
     """Check Quandl key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     if cfg.API_KEY_QUANDL == "REPLACE_ME":  # pragma: allowlist secret
@@ -409,19 +480,27 @@ def check_quandl_key(show_output: bool = False) -> str:
 
 def set_polygon_key(key: str, persist: bool = False, show_output: bool = False) -> str:
     """Set Polygon key
+
     Parameters
     ----------
-        key: str
-            API key
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.polygon(key="example_key")
     """
 
     set_key("OPENBB_API_POLYGON_KEY", key, persist)
@@ -430,13 +509,16 @@ def set_polygon_key(key: str, persist: bool = False, show_output: bool = False) 
 
 def check_polygon_key(show_output: bool = False) -> str:
     """Check Polygon key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     if cfg.API_POLYGON_KEY == "REPLACE_ME":
@@ -465,19 +547,27 @@ def check_polygon_key(show_output: bool = False) -> str:
 
 def set_fred_key(key: str, persist: bool = False, show_output: bool = False) -> str:
     """Set FRED key
+
     Parameters
     ----------
-        key: str
-            API key
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.fred(key="example_key")
     """
 
     set_key("OPENBB_API_FRED_KEY", key, persist)
@@ -486,13 +576,16 @@ def set_fred_key(key: str, persist: bool = False, show_output: bool = False) -> 
 
 def check_fred_key(show_output: bool = False) -> str:
     """Check FRED key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     if cfg.API_FRED_KEY == "REPLACE_ME":
@@ -520,19 +613,27 @@ def check_fred_key(show_output: bool = False) -> str:
 
 def set_news_key(key: str, persist: bool = False, show_output: bool = False) -> str:
     """Set News key
+
     Parameters
     ----------
-        key: str
-            API key
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.news(key="example_key")
     """
 
     set_key("OPENBB_API_NEWS_TOKEN", key, persist)
@@ -541,13 +642,16 @@ def set_news_key(key: str, persist: bool = False, show_output: bool = False) -> 
 
 def check_news_key(show_output: bool = False) -> str:
     """Check News key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     if cfg.API_NEWS_TOKEN == "REPLACE_ME":  # nosec
@@ -575,19 +679,27 @@ def check_news_key(show_output: bool = False) -> str:
 
 def set_tradier_key(key: str, persist: bool = False, show_output: bool = False) -> str:
     """Set Tradier key
+
     Parameters
     ----------
-        key: str
-            API key
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.tradier(key="example_key")
     """
 
     set_key("OPENBB_API_TRADIER_TOKEN", key, persist)
@@ -596,13 +708,16 @@ def set_tradier_key(key: str, persist: bool = False, show_output: bool = False) 
 
 def check_tradier_key(show_output: bool = False) -> str:
     """Check Tradier key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     if cfg.API_TRADIER_TOKEN == "REPLACE_ME":  # nosec
@@ -635,19 +750,27 @@ def check_tradier_key(show_output: bool = False) -> str:
 
 def set_cmc_key(key: str, persist: bool = False, show_output: bool = False) -> str:
     """Set Coinmarketcap key
+
     Parameters
     ----------
-        key: str
-            API key
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.cmc(key="example_key")
     """
 
     set_key("OPENBB_API_CMC_KEY", key, persist)
@@ -656,10 +779,12 @@ def set_cmc_key(key: str, persist: bool = False, show_output: bool = False) -> s
 
 def check_cmc_key(show_output: bool = False) -> str:
     """Check Coinmarketcap key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool
+        Display status string or not. By default, False.
+
     Returns
     -------
     status: str
@@ -687,19 +812,27 @@ def check_cmc_key(show_output: bool = False) -> str:
 
 def set_finnhub_key(key: str, persist: bool = False, show_output: bool = False) -> str:
     """Set Finnhub key
+
     Parameters
     ----------
-        key: str
-            API key
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.finnhub(key="example_key")
     """
 
     set_key("OPENBB_API_FINNHUB_KEY", key, persist)
@@ -708,13 +841,16 @@ def set_finnhub_key(key: str, persist: bool = False, show_output: bool = False) 
 
 def check_finnhub_key(show_output: bool = False) -> str:
     """Check Finnhub key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     if cfg.API_FINNHUB_KEY == "REPLACE_ME":
@@ -742,19 +878,27 @@ def check_finnhub_key(show_output: bool = False) -> str:
 
 def set_iex_key(key: str, persist: bool = False, show_output: bool = False) -> str:
     """Set IEX Cloud key
+
     Parameters
     ----------
-        key: str
-            API key
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.iex(key="example_key")
     """
 
     set_key("OPENBB_API_IEX_TOKEN", key, persist)
@@ -763,13 +907,16 @@ def set_iex_key(key: str, persist: bool = False, show_output: bool = False) -> s
 
 def check_iex_key(show_output: bool = False) -> str:
     """Check IEX Cloud key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     if cfg.API_IEX_TOKEN == "REPLACE_ME":  # nosec
@@ -802,22 +949,41 @@ def set_reddit_key(
     show_output: bool = False,
 ) -> str:
     """Set Reddit key
+
     Parameters
     ----------
-        client_id: str
-        client_secret: str
-        password: str
-        username: str
-        useragent: str
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    client_id: str
+        Client ID
+    client_secret: str
+        Client secret
+    password: str
+        User password
+    username: str
+        User username
+    useragent: str
+        User useragent
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.reddit(
+            client_id="example_id",
+            client_secret="example_secret",
+            password="example_password",
+            username="example_username",
+            useragent="example_useragent"
+        )
     """
 
     set_key("OPENBB_API_REDDIT_CLIENT_ID", client_id, persist)
@@ -831,13 +997,16 @@ def set_reddit_key(
 
 def check_reddit_key(show_output: bool = False) -> str:
     """Check Reddit key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     reddit_keys = [
@@ -889,19 +1058,27 @@ def check_reddit_key(show_output: bool = False) -> str:
 
 def set_bitquery_key(key: str, persist: bool = False, show_output: bool = False) -> str:
     """Set Bitquery key
+
     Parameters
     ----------
-        key: str
-            API key
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.bitquery(key="example_key")
     """
 
     set_key("OPENBB_API_BITQUERY_KEY", key, persist)
@@ -910,13 +1087,16 @@ def set_bitquery_key(key: str, persist: bool = False, show_output: bool = False)
 
 def check_bitquery_key(show_output: bool = False) -> str:
     """Check Bitquery key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     bitquery = cfg.API_BITQUERY_KEY
@@ -957,20 +1137,35 @@ def set_twitter_key(
     show_output: bool = False,
 ) -> str:
     """Set Twitter key
+
     Parameters
     ----------
-        key: str
-        secret: str
-        access_token: str
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    secret: str
+        API secret
+    access_token: str
+        API token
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.twitter(
+            key="example_key",
+            secret="example_secret",
+            access_token="example_access_token"
+        )
     """
 
     set_key("OPENBB_API_TWITTER_KEY", key, persist)
@@ -982,13 +1177,16 @@ def set_twitter_key(
 
 def check_twitter_key(show_output: bool = False) -> str:
     """Check Twitter key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     twitter_keys = [
@@ -1033,19 +1231,32 @@ def set_rh_key(
     show_output: bool = False,
 ) -> str:
     """Set Robinhood key
+
     Parameters
     ----------
-        username: str
-        password: str
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    username: str
+        User username
+    password: str
+        User password
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.rh(
+            username="example_username",
+            password="example_password"
+        )
     """
 
     set_key("OPENBB_RH_USERNAME", username, persist)
@@ -1056,13 +1267,16 @@ def set_rh_key(
 
 def check_rh_key(show_output: bool = False) -> str:
     """Check Robinhood key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     rh_keys = [cfg.RH_USERNAME, cfg.RH_PASSWORD]
@@ -1087,20 +1301,34 @@ def set_degiro_key(
     show_output: bool = False,
 ) -> str:
     """Set Degiro key
+
     Parameters
     ----------
-        username: str
-        password: str
-        secret: str
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    username: str
+        User username
+    password: str
+        User password
+    secret: str, optional
+        User secret
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.degiro(
+            username="example_username",
+            password="example_password"
+        )
     """
 
     set_key("OPENBB_DG_USERNAME", username, persist)
@@ -1112,13 +1340,16 @@ def set_degiro_key(
 
 def check_degiro_key(show_output: bool = False) -> str:
     """Check Degiro key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     dg_keys = [cfg.DG_USERNAME, cfg.DG_PASSWORD, cfg.DG_TOTP_SECRET]
@@ -1161,20 +1392,35 @@ def set_oanda_key(
     show_output: bool = False,
 ) -> str:
     """Set Oanda key
+
     Parameters
     ----------
-        account: str
-        access_token: str
-        account_type: str
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    account: str
+        User account
+    access_token: str
+        User token
+    account_type: str, optional
+        User account type
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.oanda(
+            account="example_account",
+            access_token="example_access_token",
+            account_type="example_account_type"
+        )
     """
 
     set_key("OPENBB_OANDA_ACCOUNT", account, persist)
@@ -1186,13 +1432,16 @@ def set_oanda_key(
 
 def check_oanda_key(show_output: bool = False) -> str:
     """Check Oanda key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     oanda_keys = [cfg.OANDA_TOKEN, cfg.OANDA_ACCOUNT]
@@ -1228,19 +1477,32 @@ def set_binance_key(
     show_output: bool = False,
 ) -> str:
     """Set Binance key
+
     Parameters
     ----------
-        key: str
-        secret: str
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    secret: str
+        API secret
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.binance(
+            key="example_key",
+            secret="example_secret"
+        )
     """
 
     set_key("OPENBB_API_BINANCE_KEY", key, persist)
@@ -1251,13 +1513,16 @@ def set_binance_key(
 
 def check_binance_key(show_output: bool = False) -> str:
     """Check Binance key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     if "REPLACE_ME" in [cfg.API_BINANCE_KEY, cfg.API_BINANCE_SECRET]:
@@ -1286,18 +1551,27 @@ def set_si_key(
     show_output: bool = False,
 ) -> str:
     """Set Sentimentinvestor key.
+
     Parameters
     ----------
-        key: str
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.si(key="example_key")
     """
 
     set_key("OPENBB_API_SENTIMENTINVESTOR_TOKEN", key, persist)
@@ -1307,13 +1581,16 @@ def set_si_key(
 
 def check_si_key(show_output: bool = False) -> str:
     """Check Sentimentinvestor key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     si_keys = [cfg.API_SENTIMENTINVESTOR_TOKEN]
@@ -1350,20 +1627,35 @@ def set_coinbase_key(
     show_output: bool = False,
 ) -> str:
     """Set Coinbase key
+
     Parameters
     ----------
-        key: str
-        secret: str
-        passphrase: str
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    secret: str
+        API secret
+    passphrase: str
+        Account passphrase
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.coinbase(
+            key="example_key",
+            secret="example_secret",
+            passphrase="example_passphrase"
+        )
     """
 
     set_key("OPENBB_API_COINBASE_KEY", key, persist)
@@ -1375,10 +1667,12 @@ def set_coinbase_key(
 
 def check_coinbase_key(show_output: bool = False) -> str:
     """Check Coinbase key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
     status: str
@@ -1416,19 +1710,27 @@ def check_coinbase_key(show_output: bool = False) -> str:
 
 def set_walert_key(key: str, persist: bool = False, show_output: bool = False) -> str:
     """Set Walert key
+
     Parameters
     ----------
-        key: str
-            API key
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.walert(key="example_key")
     """
 
     set_key("OPENBB_API_WHALE_ALERT_KEY", key, persist)
@@ -1437,13 +1739,16 @@ def set_walert_key(key: str, persist: bool = False, show_output: bool = False) -
 
 def check_walert_key(show_output: bool = False) -> str:
     """Check Walert key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     if cfg.API_WHALE_ALERT_KEY == "REPLACE_ME":
@@ -1476,19 +1781,27 @@ def set_glassnode_key(
     key: str, persist: bool = False, show_output: bool = False
 ) -> str:
     """Set Glassnode key.
+
     Parameters
     ----------
-        key: str
-            API key
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.glassnode(key="example_key")
     """
 
     set_key("OPENBB_API_GLASSNODE_KEY", key, persist)
@@ -1497,13 +1810,16 @@ def set_glassnode_key(
 
 def check_glassnode_key(show_output: bool = False) -> str:
     """Check Glassnode key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     if cfg.API_GLASSNODE_KEY == "REPLACE_ME":
@@ -1538,19 +1854,27 @@ def set_coinglass_key(
     key: str, persist: bool = False, show_output: bool = False
 ) -> str:
     """Set Coinglass key.
+
     Parameters
     ----------
-        key: str
-            API key
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.coinglass(key="example_key")
     """
 
     set_key("OPENBB_API_COINGLASS_KEY", key, persist)
@@ -1559,13 +1883,16 @@ def set_coinglass_key(
 
 def check_coinglass_key(show_output: bool = False) -> str:
     """Check Coinglass key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     if cfg.API_COINGLASS_KEY == "REPLACE_ME":
@@ -1596,19 +1923,27 @@ def check_coinglass_key(show_output: bool = False) -> str:
 
 def set_cpanic_key(key: str, persist: bool = False, show_output: bool = False) -> str:
     """Set Cpanic key.
+
     Parameters
     ----------
-        key: str
-            API key
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.cpanic(key="example_key")
     """
 
     set_key("OPENBB_API_CRYPTO_PANIC_KEY", key, persist)
@@ -1617,13 +1952,16 @@ def set_cpanic_key(key: str, persist: bool = False, show_output: bool = False) -
 
 def check_cpanic_key(show_output: bool = False) -> str:
     """Check Cpanic key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     if cfg.API_CRYPTO_PANIC_KEY == "REPLACE_ME":
@@ -1650,19 +1988,27 @@ def set_ethplorer_key(
     key: str, persist: bool = False, show_output: bool = False
 ) -> str:
     """Set Ethplorer key.
+
     Parameters
     ----------
-        key: str
-            API key
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.ethplorer(key="example_key")
     """
 
     set_key("OPENBB_API_ETHPLORER_KEY", key, persist)
@@ -1671,13 +2017,16 @@ def set_ethplorer_key(
 
 def check_ethplorer_key(show_output: bool = False) -> str:
     """Check Ethplorer key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     if cfg.API_ETHPLORER_KEY == "REPLACE_ME":
@@ -1709,21 +2058,32 @@ def set_smartstake_key(
     key: str, access_token: str, persist: bool = False, show_output: bool = False
 ):
     """Set Smartstake key.
+
     Parameters
     ----------
-        key: str
-            API key
-        access_token: str
-            API token
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    access_token: str
+        API token
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.smartstake(
+            key="example_key",
+            access_token="example_access_token",
+            )
     """
 
     set_key("OPENBB_API_SMARTSTAKE_KEY", key, persist)
@@ -1733,13 +2093,16 @@ def set_smartstake_key(
 
 def check_smartstake_key(show_output: bool = False) -> str:
     """Check Smartstake key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     if "REPLACE_ME" in [
@@ -1784,19 +2147,27 @@ def check_smartstake_key(show_output: bool = False) -> str:
 
 def set_github_key(key: str, persist: bool = False, show_output: bool = False) -> str:
     """Set GitHub key.
+
     Parameters
     ----------
-        key: str
-            API key
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.github(key="example_key")
     """
 
     set_key("OPENBB_API_GITHUB_KEY", key, persist)
@@ -1805,13 +2176,16 @@ def set_github_key(key: str, persist: bool = False, show_output: bool = False) -
 
 def check_github_key(show_output: bool = False) -> str:
     """Check GitHub key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     if cfg.API_GITHUB_KEY == "REPLACE_ME":  # pragma: allowlist secret
@@ -1830,19 +2204,27 @@ def check_github_key(show_output: bool = False) -> str:
 
 def set_messari_key(key: str, persist: bool = False, show_output: bool = False) -> str:
     """Set Messari key.
+
     Parameters
     ----------
-        key: str
-            API key
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.messari(key="example_key")
     """
 
     set_key("OPENBB_API_MESSARI_KEY", key, persist)
@@ -1851,13 +2233,16 @@ def set_messari_key(key: str, persist: bool = False, show_output: bool = False) 
 
 def check_messari_key(show_output: bool = False) -> str:
     """Check Messari key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     if (
@@ -1887,19 +2272,27 @@ def check_messari_key(show_output: bool = False) -> str:
 
 def set_eodhd_key(key: str, persist: bool = False, show_output: bool = False) -> str:
     """Set Eodhd key.
+
     Parameters
     ----------
-        key: str
-            API key
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.eodhd(key="example_key")
     """
 
     set_key("OPENBB_API_EODHD_KEY", key, persist)
@@ -1908,13 +2301,16 @@ def set_eodhd_key(key: str, persist: bool = False, show_output: bool = False) ->
 
 def check_eodhd_key(show_output: bool = False) -> str:
     """Check Eodhd key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     if cfg.API_EODHD_KEY == "REPLACE_ME":  # nosec
@@ -1940,19 +2336,27 @@ def set_santiment_key(
     key: str, persist: bool = False, show_output: bool = False
 ) -> str:
     """Set Santiment key.
+
     Parameters
     ----------
-        key: str
-            API key
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.santiment(key="example_key")
     """
 
     set_key("OPENBB_API_SANTIMENT_KEY", key, persist)
@@ -1961,13 +2365,16 @@ def set_santiment_key(
 
 def check_santiment_key(show_output: bool = False) -> str:
     """Check Santiment key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
 
     if cfg.API_SANTIMENT_KEY == "REPLACE_ME":
@@ -2004,19 +2411,27 @@ def check_santiment_key(show_output: bool = False) -> str:
 
 def set_shroom_key(key: str, persist: bool = False, show_output: bool = False) -> str:
     """Set Shroom key
+
     Parameters
     ----------
-        key: str
-            API key
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
     Returns
     -------
-    status: str
+    str
+        Status of key set
+
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.shroom(key="example_key")
     """
 
     set_key("OPENBB_API_SHROOM_KEY", key, persist)
@@ -2024,7 +2439,19 @@ def set_shroom_key(key: str, persist: bool = False, show_output: bool = False) -
 
 
 def check_shroom_key(show_output: bool = False) -> str:
-    """Check Shroom key"""
+    """Check Shroom key
+
+    Parameters
+    ----------
+    show_output: bool, optional
+        Display status string or not. By default, False.
+
+    Returns
+    -------
+    str
+        Status of key set
+    """
+
     if cfg.API_SHROOM_KEY == "REPLACE_ME":
         logger.info("Shroom key not defined")
         status = KeyStatus.NOT_DEFINED
@@ -2060,19 +2487,24 @@ def set_tokenterminal_key(
 
     Parameters
     ----------
-        key: str
-            API key
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
 
     Returns
     -------
-    status: str
+    str
+        Status of key set
 
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.tokenterminal(key="example_key")
     """
     set_key("OPENBB_API_TOKEN_TERMINAL_KEY", key, persist)
     return check_tokenterminal_key(show_output)
@@ -2083,13 +2515,13 @@ def check_tokenterminal_key(show_output: bool = False) -> str:
 
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
 
     Returns
     -------
-    status: str
-
+    str
+        Status of key set
     """
     if cfg.API_TOKEN_TERMINAL_KEY == "REPLACE_ME":
         logger.info("Token Terminal key not defined")
@@ -2115,19 +2547,24 @@ def set_stocksera_key(key: str, persist: bool = False, show_output: bool = False
 
     Parameters
     ----------
-        key: str
-            API key
-        persist: bool
-            If False, api key change will be contained to where it was changed. For example, Jupyter notebook.
-            If True, api key change will be global, i.e. it will affect terminal environment variables.
-            By default, False.
-        show_output: bool
-            Display status string or not. By default, False.
+    key: str
+        API key
+    persist: bool, optional
+        If False, api key change will be contained to where it was changed. For example, a Jupyter notebook session.
+        If True, api key change will be global, i.e. it will affect terminal environment variables.
+        By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
 
     Returns
     -------
-    status: str
+    str
+        Status of key set
 
+    Examples
+    --------
+    >>> from openbb_terminal.sdk import openbb
+    >>> openbb.keys.stocksera(key="example_key")
     """
     set_key("OPENBB_API_STOCKSERA_KEY", key, persist)
     return check_stocksera_key(show_output)
@@ -2135,14 +2572,16 @@ def set_stocksera_key(key: str, persist: bool = False, show_output: bool = False
 
 def check_stocksera_key(show_output: bool = False):
     """Check Stocksera key
+
     Parameters
     ----------
-        show_output: bool
-            Display status string or not. By default, False.
+    show_output: bool, optional
+        Display status string or not. By default, False.
 
     Returns
     -------
-    status: str
+    str
+        Status of key set
     """
     if cfg.API_STOCKSERA_KEY == "REPLACE_ME":
         logger.info("Stocksera key not defined")

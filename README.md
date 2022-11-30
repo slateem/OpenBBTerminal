@@ -45,9 +45,9 @@
   <p align="center">
     Investment research for everyone.
     <br />
-    <a href="https://github.com/OpenBB-finance/OpenBBTerminal/tree/master/openbb_terminal/README.md"><strong>≪  GETTING STARTED</strong></a>
+    <a href="https://docs.openbb.co/terminal/quickstart/installation"><strong>≪  GETTING STARTED</strong></a>
     &nbsp · &nbsp <a href="https://github.com/OpenBB-finance/OpenBBTerminal/tree/master/CONTRIBUTING.md"><strong>CONTRIBUTING</strong></a> &nbsp · &nbsp
-    <a href="https://openbb-finance.github.io/OpenBBTerminal/">
+    <a href="https://docs.openbb.co/terminal">
     <strong>SEE FEATURES »</strong></a>
     <br />
     <br />
@@ -94,14 +94,19 @@ As a Python-based environment, OpenBBTerminal opens access to numerous Python da
 
 ## 2. Installation
 
-If you wish to install the OpenBBTerminal, there are currently four options:
+If you wish to install the OpenBB Terminal or the OpenBB SDK, please use one of the following options:
 
-|**Option**|**Use case**|
+|**OpenBB Terminal**|**Usage**|
 |:-|:-|
-|[Installer for Mac or Windows](https://openbb-finance.github.io/OpenBBTerminal/#accessing-the-openbb-terminal)|Recommended way if you just want to use the terminal.|
-|[Git clone](openbb_terminal/README.md#anaconda--python)|Best way if you want to contribute to the project : by adding code or documentation.|
-|[Pypi.org](openbb_terminal/SDK_README)|Best way if you want to use the SDK.|
-|[Using Docker](openbb_terminal/DOCKER_README.md)|An alternative way.|
+|[Windows Installer](https://docs.openbb.co/terminal/quickstart/installation?tab=windows)|Recommended way for Windows if you just want to use the OpenBB Terminal|
+|[MacOS Installer](https://docs.openbb.co/terminal/quickstart/installation?tab=mac)|Recommended way for MacOS if you just want to use the OpenBB Terminal|
+|[Docker](https://docs.openbb.co/terminal/quickstart/installation?tab=docker)|An alternative way if you just want to use the OpenBB Terminal|
+|[Python](https://docs.openbb.co/terminal/quickstart/installation?tab=python)|If you wish to contribute to the development of the OpenBB Terminal|
+
+|**OpenBB SDK** &nbsp; &nbsp; &nbsp; &nbsp; |**Usage**|
+|:-|:-|
+|[PyPi](https://docs.openbb.co/sdk/quickstart/installation)|Recommended way if you just want to use the OpenBB SDK|
+|[Python](https://docs.openbb.co/terminal/quickstart/installation?tab=python)|If you wish to contribute to the development of the OpenBB SDK &nbsp; &nbsp; &nbsp; &nbsp;|
 
 ## 3. Contributing
 

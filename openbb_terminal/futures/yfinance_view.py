@@ -2,6 +2,7 @@
 __docformat__ = "numpy"
 
 from typing import Optional, List
+from itertools import cycle
 import logging
 import os
 
@@ -19,6 +20,7 @@ from openbb_terminal.helper_funcs import (
     is_valid_axes_count,
 )
 from openbb_terminal.rich_config import console
+from openbb_terminal.futures.futures_helper import make_white
 
 logger = logging.getLogger(__name__)
 
@@ -61,9 +63,9 @@ def display_search(
 
 @log_start_end(log=logger)
 def display_historical(
-    tickers: List[str],
+    symbols: List[str],
     expiry: str = "",
-    start_date: str = (datetime.now() - timedelta(days=3 * 365)).strftime("%Y-%m-%d"),
+    start_date: Optional[str] = None,
     raw: bool = False,
     export: str = "",
     external_axes: Optional[List[plt.Axes]] = None,
@@ -72,11 +74,11 @@ def display_historical(
 
     Parameters
     ----------
-    tickers: List[str]
-        List of future timeseries tickers to display
+    symbols: List[str]
+        List of future timeseries symbols to display
     expiry: str
         Future expiry date with format YYYY-MM
-    start_date : str
+    start_date : Optional[str]
         Initial date like string (e.g., 2021-10-01)
     raw: bool
         Display futures timeseries in raw format
@@ -85,23 +87,27 @@ def display_historical(
     external_axes : Optional[List[plt.Axes]], optional
         External axes (1 axis is expected in the list), by default None
     """
-    tickers_validated = list()
-    for ticker in tickers:
-        if ticker in yfinance_model.FUTURES_DATA["Ticker"].unique().tolist():
-            tickers_validated.append(ticker)
+
+    if start_date is None:
+        start_date = (datetime.now() - timedelta(days=3 * 365)).strftime("%Y-%m-%d")
+
+    symbols_validated = list()
+    for symbol in symbols:
+        if symbol in yfinance_model.FUTURES_DATA["Ticker"].unique().tolist():
+            symbols_validated.append(symbol)
         else:
-            console.print(f"[red]{ticker} is not a valid ticker[/red]")
+            console.print(f"[red]{symbol} is not a valid symbol[/red]")
 
-    tickers = tickers_validated
+    symbols = symbols_validated
 
-    if not tickers:
-        console.print("No ticker was provided.\n")
+    if not symbols:
+        console.print("No symbol was provided.\n")
         return
 
-    historicals = yfinance_model.get_historical_futures(tickers, expiry)
+    historicals = yfinance_model.get_historical_futures(symbols, expiry)
 
     if historicals.empty:
-        console.print(f"No data was found for the tickers: {', '.join(tickers)}\n")
+        console.print(f"No data was found for the symbols: {', '.join(symbols)}\n")
         return
 
     if raw or len(historicals) == 1:
@@ -129,7 +135,8 @@ def display_historical(
         else:
             return
 
-        if len(tickers) > 1:
+        colors = cycle(theme.get_colors())
+        if len(symbols) > 1:
             name = list()
             for tick in historicals["Adj Close"].columns.tolist():
                 if len(historicals["Adj Close"][tick].dropna()) == 1:
@@ -160,6 +167,7 @@ def display_historical(
                 ax.plot(
                     historicals["Adj Close"][tick].dropna().index,
                     historicals["Adj Close"][tick].dropna().values,
+                    color=next(colors, "#FCED00"),
                 )
                 ax.legend(name)
 
@@ -169,12 +177,14 @@ def display_historical(
                 ax.set_xlim(first, historicals["Adj Close"].index[-1])
                 theme.style_primary_axis(ax)
 
-                if external_axes is None:
-                    theme.visualize_output()
+                make_white(ax)
+
+            if external_axes is None:
+                theme.visualize_output()
         else:
             if len(historicals["Adj Close"]) == 1:
                 console.print(
-                    f"\nA single datapoint on {tickers[0]} is not enough to depict a chart, data shown below."
+                    f"\nA single datapoint on {symbols[0]} is not enough to depict a chart, data shown below."
                 )
                 print_rich_table(
                     historicals[
@@ -188,11 +198,12 @@ def display_historical(
 
             else:
                 name = yfinance_model.FUTURES_DATA[
-                    yfinance_model.FUTURES_DATA["Ticker"] == tickers[0]
+                    yfinance_model.FUTURES_DATA["Ticker"] == symbols[0]
                 ]["Description"].values[0]
                 ax.plot(
                     historicals["Adj Close"].dropna().index,
                     historicals["Adj Close"].dropna().values,
+                    color=next(colors, "#FCED00"),
                 )
                 if expiry:
                     ax.set_title(f"{name} with expiry {expiry}")
@@ -205,6 +216,7 @@ def display_historical(
                 ax.set_xlim(first, historicals["Adj Close"].index[-1])
                 theme.style_primary_axis(ax)
 
+                make_white(ax)
                 if external_axes is None:
                     theme.visualize_output()
 
@@ -218,7 +230,7 @@ def display_historical(
 
 @log_start_end(log=logger)
 def display_curve(
-    ticker: str,
+    symbol: str,
     raw: bool = False,
     export: str = "",
     external_axes: Optional[List[plt.Axes]] = None,
@@ -227,8 +239,8 @@ def display_curve(
 
     Parameters
     ----------
-    ticker: str
-        Curve future ticker to display
+    symbol: str
+        Curve future symbol to display
     raw: bool
         Display futures timeseries in raw format
     export: str
@@ -236,11 +248,11 @@ def display_curve(
     external_axes : Optional[List[plt.Axes]], optional
         External axes (1 axis is expected in the list), by default None
     """
-    if ticker not in yfinance_model.FUTURES_DATA["Ticker"].unique().tolist():
-        console.print(f"[red]'{ticker}' is not a valid ticker[/red]")
+    if symbol not in yfinance_model.FUTURES_DATA["Ticker"].unique().tolist():
+        console.print(f"[red]'{symbol}' is not a valid symbol[/red]")
         return
 
-    df = yfinance_model.get_curve_futures(ticker)
+    df = yfinance_model.get_curve_futures(symbol)
 
     if df.empty:
         console.print("[red]No future data found to generate curve.[/red]\n")
@@ -265,16 +277,19 @@ def display_curve(
             return
 
         name = yfinance_model.FUTURES_DATA[
-            yfinance_model.FUTURES_DATA["Ticker"] == ticker
+            yfinance_model.FUTURES_DATA["Ticker"] == symbol
         ]["Description"].values[0]
+        colors = cycle(theme.get_colors())
         ax.plot(
             df.index,
             df.values,
             marker="o",
             linestyle="dashed",
             linewidth=2,
-            markersize=12,
+            markersize=8,
+            color=next(colors, "#FCED00"),
         )
+        make_white(ax)
         ax.set_title(name)
         theme.style_primary_axis(ax)
 

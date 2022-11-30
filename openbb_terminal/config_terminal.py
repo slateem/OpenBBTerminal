@@ -1,17 +1,23 @@
 # IMPORTATION STANDARD
 import os
-from distutils.util import strtobool
+
 
 # IMPORTATION THIRDPARTY
 import dotenv
 
 # IMPORTATION INTERNAL
 
-from openbb_terminal.core.config.paths import USER_ENV_FILE, REPOSITORY_ENV_FILE
+from openbb_terminal.core.config.paths import (
+    PACKAGE_ENV_FILE,
+    USER_ENV_FILE,
+    REPOSITORY_ENV_FILE,
+)
+from openbb_terminal.base_helpers import load_env_vars, strtobool
 from .helper_classes import TerminalStyle as _TerminalStyle
 
 dotenv.load_dotenv(USER_ENV_FILE)
 dotenv.load_dotenv(REPOSITORY_ENV_FILE, override=True)
+dotenv.load_dotenv(PACKAGE_ENV_FILE, override=True)
 
 # Terminal UX section
 MPL_STYLE = os.getenv("OPENBB_MPLSTYLE") or "dark"
@@ -24,9 +30,6 @@ theme = _TerminalStyle(
     RICH_STYLE,
 )
 
-# Set to True to see full stack traces for debugging/error reporting
-DEBUG_MODE = False
-
 # By default the jupyter notebook will be run on port 8888
 PAPERMILL_NOTEBOOK_REPORT_PORT = (
     "8888"  # This setting is deprecated and seems to be unused
@@ -35,7 +38,10 @@ PAPERMILL_NOTEBOOK_REPORT_PORT = (
 # Logging section
 
 # USE IN LOG LINES + FOR FOLDER NAME INSIDE S3 BUCKET
-LOGGING_APP_NAME = os.getenv("OPENBB_LOGGING_APP_NAME") or "gst"
+if "site-packages" in __file__:
+    LOGGING_APP_NAME = "gst_packaged_pypi"
+else:
+    LOGGING_APP_NAME = os.getenv("OPENBB_LOGGING_APP_NAME") or "gst"
 # AWS KEYS
 LOGGING_AWS_ACCESS_KEY_ID = (
     os.getenv("OPENBB_LOGGING_AWS_ACCESS_KEY_ID") or "REPLACE_ME"
@@ -43,13 +49,12 @@ LOGGING_AWS_ACCESS_KEY_ID = (
 LOGGING_AWS_SECRET_ACCESS_KEY = (
     os.getenv("OPENBB_LOGGING_AWS_SECRET_ACCESS_KEY") or "REPLACE_ME"
 )
+LOGGING_COMMIT_HASH = str(os.getenv("OPENBB_LOGGING_COMMIT_HASH", "REPLACE_ME"))
 # D | H | M | S
 LOGGING_FREQUENCY = os.getenv("OPENBB_LOGGING_FREQUENCY") or "H"
 # stdout,stderr,noop,file
 LOGGING_HANDLERS = os.getenv("OPENBB_LOGGING_HANDLERS") or "file"
-LOGGING_ROLLING_CLOCK = bool(
-    strtobool(os.getenv("OPENBB_LOGGING_ROLLING_CLOCK", "False"))
-)
+LOGGING_ROLLING_CLOCK = load_env_vars("OPENBB_LOGGING_ROLLING_CLOCK", strtobool, False)
 # CRITICAL = 50
 # FATAL = CRITICAL
 # ERROR = 40
@@ -58,7 +63,10 @@ LOGGING_ROLLING_CLOCK = bool(
 # INFO = 20
 # DEBUG = 10
 # NOTSET = 0
-LOGGING_VERBOSITY = int(os.getenv("OPENBB_LOGGING_VERBOSITY") or 20)
+LOGGING_VERBOSITY = load_env_vars("OPENBB_LOGGING_VERBOSITY", int, 20)
+# LOGGING SUB APP
+LOGGING_SUB_APP = os.getenv("OPENBB_LOGGING_SUB_APP") or "terminal"
+LOGGING_SUPPRESS = False
 
 # API Keys section
 
